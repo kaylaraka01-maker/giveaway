@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giveaway Premium - Gacor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #f8f9fa; scroll-behavior: smooth; }
+        
+        .bento-card { 
+            border-radius: 2.5rem; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+
+        .btn-premium { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .btn-premium:active { transform: scale(0.95); }
+        .btn-premium::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        .btn-premium:hover::after { left: 100%; }
+
+        .glass-nav { 
+            background: rgba(255, 255, 255, 0.8); 
+            backdrop-filter: blur(20px); 
+        }
+        
+        .modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .chat-window { 
+            position: fixed; bottom: 20px; right: 20px; width: 350px; height: 500px; 
+            background: white; border-radius: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
+            display: flex; flex-direction: column; overflow: hidden; 
+            transform: translateY(120%); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+            z-index: 90; 
+        }
+        .chat-window.active { transform: translateY(0); }
+        
+        .floating-icon { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* PERBAIKAN: Menggunakan inline-block dengan vertical-align baseline agar pas dengan baris teks */
+        .text-shine {
+            background: linear-gradient(to right, #000 20%, #ef4444 50%, #000 80%);
+            background-size: 200% auto;
+            color: #000;
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            display: inline-block;
+            vertical-align: baseline; /* Menjaga teks tetap pada garis yang sama */
+            padding: 0 4px; /* Padding minimal agar tidak menggeser teks lain */
+            margin: 0 -2px; /* Margin negatif untuk merapatkan ke teks "MAU" dan "DARI" */
+            position: relative;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        .shuffle-name {
+            animation: shuffleText 0.1s infinite;
+        }
+        @keyframes shuffleText {
+            0% { opacity: 0.5; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1.05); }
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        .fixed-height-panel { height: 600px; }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <div id="app">
+        
+        <!-- MODAL SYARAT -->
+        <div id="modal-syarat" class="modal">
+            <div class="bg-white w-full max-w-lg bento-card p-10 shadow-2xl relative animate__animated animate__zoomIn animate__faster">
+                <button onclick="closeModal('modal-syarat')" class="absolute top-6 right-6 text-slate-300 hover:text-black transition-colors"><i data-lucide="x"></i></button>
+                <h2 class="text-3xl font-black uppercase italic mb-6">Syarat & Ketentuan</h2>
+                <ul class="space-y-4 text-slate-600 font-medium text-sm">
+                    <li class="flex gap-3"><i data-lucide="check-circle-2" class="text-red-600 shrink-0"></i> Wajib follow akun sosial media admin.</li>
+                    <li class="flex gap-3"><i data-lucide="check-circle-2" class="text-red-600 shrink-0"></i> Satu perangkat hanya berlaku untuk satu kali daftar.</li>
+                    <li class="flex gap-3"><i data-lucide="check-circle-2" class="text-red-600 shrink-0"></i> Pemenang akan dihubungi langsung oleh admin lewat WA.</li>
+                </ul>
+                <button onclick="closeModal('modal-syarat')" class="w-full mt-8 bg-black text-white py-4 rounded-2xl font-black uppercase tracking-widest btn-premium">SAYA MENGERTI</button>
+            </div>
+        </div>
+
+        <!-- USER CHAT WINDOW -->
+        <div id="chat-box" class="chat-window">
+            <div class="bg-black p-5 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="font-black text-xs uppercase italic tracking-widest">Chat Admin</span>
+                </div>
+                <button onclick="toggleChat()" class="text-gray-400 hover:text-white transition-colors"><i data-lucide="minus"></i></button>
+            </div>
+            
+            <div id="chat-setup" class="p-6 bg-slate-50 flex-1 flex flex-col justify-center gap-4">
+                <div class="text-center mb-4">
+                    <div class="w-16 h-16 bg-red-100 rounded-3xl flex items-center justify-center mx-auto mb-4 floating-icon">
+                        <i data-lucide="message-circle" class="text-red-600 w-8 h-8"></i>
+                    </div>
+                    <p class="text-[10px] font-bold uppercase text-slate-400">Siapa nama Anda?</p>
+                </div>
+                <input id="chat-user-name" type="text" placeholder="Nama Anda..." class="w-full p-4 rounded-2xl border-2 border-slate-100 focus:border-red-600 outline-none text-sm font-bold transition-all">
+                <button onclick="saveChatName()" class="bg-black text-white py-4 rounded-2xl font-black uppercase text-xs btn-premium">Mulai Chat</button>
+            </div>
+
+            <div id="chat-main" class="hidden flex-1 flex flex-col overflow-hidden">
+                <div id="chat-messages" class="flex-1 p-5 overflow-y-auto space-y-3 bg-slate-50 flex flex-col"></div>
+                <div class="p-4 bg-white border-t flex gap-2">
+                    <input id="chat-input" type="text" placeholder="Tulis pesan..." class="flex-1 bg-slate-100 p-3 rounded-xl text-xs outline-none focus:ring-2 ring-red-600/20 transition-all">
+                    <button onclick="sendMessage()" class="bg-red-600 text-white p-3 rounded-xl hover:bg-black transition-all btn-premium"><i data-lucide="send" size="16"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NAVIGATION -->
+        <nav class="fixed top-0 left-0 w-full z-50 p-6">
+            <div class="max-w-6xl mx-auto glass-nav border border-white/50 rounded-3xl px-6 py-4 flex justify-between items-center shadow-xl shadow-black/5">
+                <div class="flex items-center gap-3 group cursor-pointer" onclick="handleSecretClick()">
+                    <div class="w-10 h-10 bg-red-600 rounded-2xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-all duration-500 shadow-lg shadow-red-600/20">
+                        <i data-lucide="flame" class="text-white w-6 h-6"></i>
+                    </div>
+                    <span class="font-black text-2xl tracking-tighter uppercase italic group-hover:tracking-normal transition-all duration-500">
+                        ZK<span class="text-red-600">ZKZK</span>
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleChat()" class="bg-red-50 text-red-600 text-[10px] font-bold px-5 py-2.5 rounded-xl hover:bg-red-600 hover:text-white transition-all uppercase flex gap-2 items-center group">
+                        <i data-lucide="message-square" class="w-3 h-3 group-hover:rotate-12 transition-transform"></i> Chat Admin
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- VIEW: HOME -->
+        <div id="view-home" class="view-content pt-40 pb-20 px-4 text-center">
+            <div id="status-badge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 border border-red-100 text-red-600 text-[10px] font-bold tracking-widest uppercase mb-8">
+                <span class="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping"></span> <span id="status-text">Memuat...</span>
+            </div>
+            
+            <!-- HEADER TEKS DIPERBAIKI: Menggunakan font-size yang konsisten dan merapatkan elemen span -->
+            <h1 class="text-4xl md:text-7xl font-black tracking-tighter leading-tight mb-6 max-w-5xl mx-auto uppercase animate__animated animate__fadeInUp px-2">
+                GC JOIN KALO MAU <span class="text-shine italic underline decoration-wavy decoration-red-600/30">HADIAH</span> DARI GUA GC
+            </h1>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-w-6xl mx-auto mt-12">
+                <div class="md:col-span-5 lg:col-span-4 text-left">
+                    <div id="registration-container" class="bg-white bento-card border border-black/5 p-8 shadow-2xl relative overflow-hidden h-full min-h-[400px] flex flex-col justify-center">
+                    </div>
+                </div>
+
+                <div class="md:col-span-7 lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="bg-black bento-card p-8 sm:col-span-2 flex items-center justify-between text-white relative overflow-hidden min-h-[160px]">
+                        <div class="relative z-10 text-left">
+                            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Pendaftar</h4>
+                            <div id="stat-count" class="text-7xl font-black text-red-500 tracking-tighter">0</div>
+                        </div>
+                        <i data-lucide="users" class="text-white/5 absolute -right-4 -bottom-4 w-32 h-32 rotate-12"></i>
+                    </div>
+                    
+                    <div onclick="openModal('modal-syarat')" class="bg-white bento-card border border-black/5 p-8 flex flex-col items-center justify-center gap-4 hover:border-red-600 transition-all group cursor-pointer shadow-sm">
+                        <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                            <i data-lucide="scroll-text" class="text-red-600 w-8 h-8"></i>
+                        </div>
+                        <h5 class="font-black uppercase italic text-sm">Baca Syarat</h5>
+                    </div>
+
+                    <div id="wa-button-container" class="bg-white bento-card border border-black/5 p-8 flex flex-col items-center justify-center gap-4 hover:border-red-600 transition-all group cursor-pointer shadow-sm">
+                        <!-- Content via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: LOGIN -->
+        <div id="view-login" class="view-content hidden min-h-screen bg-white flex items-center justify-center p-6 pt-32">
+            <div class="w-full max-w-sm bg-white p-10 bento-card border border-black/5 shadow-2xl text-center">
+                <div class="w-16 h-16 bg-slate-900 rounded-3xl flex items-center justify-center mx-auto mb-8 floating-icon"><i data-lucide="lock" class="text-white"></i></div>
+                <h2 class="text-2xl font-black italic uppercase mb-8">Admin Login</h2>
+                <input id="admin-password-input" type="password" placeholder="Password..." class="w-full bg-slate-100 p-5 rounded-2xl text-center font-black mb-4 outline-none border-2 border-transparent focus:border-red-600 transition-all">
+                <button onclick="handleLogin()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase italic tracking-widest btn-premium">Akses Dashboard</button>
+            </div>
+        </div>
+
+        <!-- VIEW: ADMIN -->
+        <div id="view-admin" class="view-content hidden min-h-screen bg-[#f1f5f9] p-6 pt-32 pb-10">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Sidebar Controls -->
+                <aside class="lg:col-span-3 space-y-4 fixed-height-panel flex flex-col overflow-y-auto pr-2">
+                    <div class="bg-black text-white p-8 bento-card shadow-xl relative overflow-hidden group shrink-0">
+                        <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1">TOTAL PESERTA</p>
+                        <h3 id="admin-stat-count" class="text-4xl font-black text-red-500">0</h3>
+                        <i data-lucide="bar-chart-3" class="absolute -right-2 -bottom-2 w-20 h-20 text-white/5 -rotate-12"></i>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-3xl border border-black/5 shadow-sm space-y-2 flex-1">
+                        <button id="btn-lock" onclick="toggleGembok()" class="w-full p-4 rounded-2xl flex items-center justify-between font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"></button>
+                        
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                             <p class="text-[8px] font-black uppercase text-slate-400 mb-4">Pengaturan Web</p>
+                             <div class="space-y-4">
+                                <div>
+                                    <label class="text-[7px] font-bold uppercase text-slate-400">Password Admin</label>
+                                    <input id="set-admin-pass" type="text" class="w-full mt-1 bg-white border border-slate-200 p-2 rounded-lg text-[10px] font-bold outline-none focus:border-red-600">
+                                </div>
+                                <div>
+                                    <label class="text-[7px] font-bold uppercase text-slate-400">Nomor WA Admin</label>
+                                    <input id="set-admin-wa" type="text" class="w-full mt-1 bg-white border border-slate-200 p-2 rounded-lg text-[10px] font-bold outline-none focus:border-red-600" placeholder="628123...">
+                                </div>
+                                <button onclick="saveAdvancedSettings()" class="w-full bg-black text-white p-3 rounded-xl text-[8px] font-black uppercase btn-premium">Simpan Perubahan</button>
+                             </div>
+                        </div>
+
+                        <button onclick="resetData()" class="w-full p-4 rounded-2xl flex items-center justify-between font-black text-[10px] uppercase text-red-600 bg-red-50 border border-red-100 hover:bg-red-100 transition-all">Hapus Database</button>
+                        <button onclick="clearChats()" class="w-full p-4 rounded-2xl flex items-center justify-between font-black text-[10px] uppercase text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-all">Bersihkan Chat</button>
+                        <hr class="my-2 border-slate-100">
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                            <p class="text-[8px] font-black uppercase text-slate-400 mb-2">Simulasi Peserta</p>
+                            <button onclick="addBotUser()" class="w-full bg-white border border-slate-200 p-3 rounded-xl text-[9px] font-black uppercase hover:bg-black hover:text-white transition-all">Tambah 1 Bot</button>
+                        </div>
+                        <button onclick="handleLogout()" class="w-full p-4 rounded-2xl flex items-center justify-between font-black text-[10px] uppercase text-slate-500 bg-slate-50 border border-slate-200 hover:bg-slate-200 transition-all mt-4">Logout Admin</button>
+                    </div>
+                </aside>
+
+                <!-- Database Table -->
+                <div class="lg:col-span-4 flex flex-col fixed-height-panel">
+                    <div class="flex justify-between items-center mb-6 shrink-0">
+                        <h1 class="text-2xl font-black italic uppercase">Database</h1>
+                        <button id="btn-undi" onclick="startRaffleAnimation()" class="bg-red-600 text-white px-4 py-2 rounded-xl font-black italic uppercase text-[9px] btn-premium">Undi Pemenang</button>
+                    </div>
+                    <div id="winner-display" class="hidden shrink-0"></div>
+                    <div class="bg-white bento-card border border-black/5 shadow-sm overflow-hidden flex-1 flex flex-col">
+                        <div class="overflow-y-auto flex-1">
+                            <table class="w-full text-left sticky top-0 bg-white z-10">
+                                <thead class="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                    <tr>
+                                        <th class="px-6 py-4">Nama</th>
+                                        <th class="px-6 py-4 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="divide-y divide-slate-50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Chat -->
+                <div class="lg:col-span-5 flex flex-col bg-white p-4 rounded-[2.5rem] shadow-sm border border-black/5 fixed-height-panel">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 h-full overflow-hidden">
+                        <div class="md:col-span-4 border-r border-slate-100 flex flex-col pr-2 overflow-hidden">
+                            <h4 class="text-[10px] font-black uppercase tracking-widest mb-4 shrink-0">Messages</h4>
+                            <div id="admin-user-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
+                        </div>
+                        <div class="md:col-span-8 flex flex-col h-full overflow-hidden">
+                            <div id="admin-chat-header" class="pb-4 border-b border-slate-50 mb-4 px-2 flex justify-between items-center shrink-0">
+                                <h4 id="active-chat-name" class="text-sm font-black italic uppercase text-slate-400">Pilih User...</h4>
+                                <div class="w-2 h-2 rounded-full bg-slate-200" id="chat-status-dot"></div>
+                            </div>
+                            <div id="admin-chat-messages" class="flex-1 overflow-y-auto space-y-3 px-2 mb-4 bg-slate-50/50 rounded-2xl p-4 flex flex-col"></div>
+                            <div class="px-2 flex gap-2 shrink-0">
+                                <input id="admin-chat-input" type="text" placeholder="Balas user..." class="flex-1 bg-slate-100 p-3 rounded-xl text-xs outline-none">
+                                <button onclick="sendAdminReply()" class="bg-black text-white p-3 rounded-xl btn-premium"><i data-lucide="send" size="14"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, onSnapshot, setDoc, updateDoc, writeBatch, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let participants = [];
+        let allChats = [];
+        let settings = { isActive: true, adminPass: "admin123", waNumber: "628123456789" };
+        let currentUser = null;
+        let chatUserName = localStorage.getItem('giveaway_chat_name') || "";
+        let activeAdminChatUserId = null;
+
+        const init = async () => {
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            };
+            await initAuth();
+            
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (user) startSync();
+            });
+            
+            lucide.createIcons();
+            updateChatView();
+        };
+
+        const startSync = () => {
+            if (!currentUser) return;
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'giveaway_users'), (snap) => {
+                participants = snap.docs.map(d => ({ id: d.id, uid: d.data().uid, ...d.data() }));
+                updateUI();
+                renderAdminUserList();
+            }, (err) => console.error(err));
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'admin_chats'), (snap) => {
+                allChats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                updateChatUI();
+                renderAdminUserList();
+                renderAdminChatDetails();
+            }, (err) => console.error(err));
+
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), (snap) => {
+                if(snap.exists()) {
+                    settings = { ...settings, ...snap.data() };
+                } else {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), settings);
+                }
+                updateUI();
+                syncAdminInputs();
+            }, (err) => console.error(err));
+        };
+
+        const syncAdminInputs = () => {
+            const passInput = document.getElementById('set-admin-pass');
+            const waInput = document.getElementById('set-admin-wa');
+            if(passInput) passInput.value = settings.adminPass;
+            if(waInput) waInput.value = settings.waNumber;
+        };
+
+        const getJoinStatus = () => localStorage.getItem('joined_' + appId);
+        const setJoinStatus = (val) => localStorage.setItem('joined_' + appId, val);
+        const clearJoinStatus = () => localStorage.removeItem('joined_' + appId);
+
+        // --- GLOBAL ACTIONS ---
+        window.handleSecretClick = () => {
+            if (!window._sc) window._sc = 0;
+            window._sc++;
+            if (window._sc >= 3) { window._sc = 0; showView('login'); }
+            setTimeout(() => window._sc = 0, 2000);
+        };
+
+        window.showView = (name) => {
+            document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
+            document.getElementById(`view-${name}`).classList.remove('hidden');
+        };
+
+        window.openModal = (id) => document.getElementById(id).classList.add('active');
+        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+        window.toggleChat = () => document.getElementById('chat-box').classList.toggle('active');
+
+        window.saveChatName = () => {
+            const val = document.getElementById('chat-user-name').value.trim();
+            if(val) { chatUserName = val; localStorage.setItem('giveaway_chat_name', val); updateChatView(); }
+        };
+
+        const updateChatView = () => {
+            const setup = document.getElementById('chat-setup');
+            const main = document.getElementById('chat-main');
+            if(chatUserName) { setup.classList.add('hidden'); main.classList.remove('hidden'); }
+            else { setup.classList.remove('hidden'); main.classList.add('hidden'); }
+        };
+
+        window.sendMessage = async () => {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text || !currentUser) return;
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'admin_chats'), {
+                userId: currentUser.uid, 
+                senderName: chatUserName, 
+                senderType: 'user', 
+                text, 
+                timestamp: new Date().toISOString()
+            });
+            input.value = '';
+        };
+
+        // --- ADMIN LOGIC ---
+        window.handleLogin = () => { 
+            const input = document.getElementById('admin-password-input').value;
+            if (input === settings.adminPass) {
+                showView('admin'); 
+            } else {
+                alert("Password Salah!");
+            }
+        };
+
+        window.saveAdvancedSettings = async () => {
+            const adminPass = document.getElementById('set-admin-pass').value.trim();
+            const waNumber = document.getElementById('set-admin-wa').value.trim();
+            if(!adminPass || !waNumber) return alert("Semua kolom harus diisi!");
+            
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), { 
+                adminPass, 
+                waNumber 
+            });
+            alert("Pengaturan Berhasil Disimpan!");
+        };
+
+        window.handleLogout = () => showView('home');
+        window.toggleGembok = () => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), { isActive: !settings.isActive });
+
+        window.resetData = async () => {
+            if (!confirm("Hapus semua database peserta?")) return;
+            const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'giveaway_users'));
+            const batch = writeBatch(db);
+            snap.docs.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+            clearJoinStatus();
+        };
+
+        window.clearChats = async () => {
+            if (!confirm("Hapus semua riwayat chat?")) return;
+            const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'admin_chats'));
+            const batch = writeBatch(db);
+            snap.docs.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+        };
+
+        window.deleteSingle = (id) => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'giveaway_users', id));
+
+        window.addBotUser = async () => {
+            const first = ["Budi", "Santi", "Andi", "Rina", "Joko", "Siska", "Dedi", "Agus", "Wawan", "Dewi"];
+            const last = ["Gacor", "Mulyono", "Santoso", "Wijaya", "Putra", "Kusuma", "Pratama"];
+            const name = first[Math.floor(Math.random()*first.length)] + " " + last[Math.floor(Math.random()*last.length)];
+            const contact = "08" + Math.floor(100000000 + Math.random() * 900000000);
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'giveaway_users'), { 
+                name, 
+                contact, 
+                timestamp: new Date().toISOString(), 
+                isBot: true,
+                uid: 'bot-' + Math.random().toString(36).substr(2, 9)
+            });
+        };
+
+        window.startRaffleAnimation = () => {
+            if (participants.length === 0) return;
+            const btn = document.getElementById('btn-undi');
+            const display = document.getElementById('winner-display');
+            btn.disabled = true;
+            display.classList.remove('hidden');
+            let counter = 0;
+            const maxTurns = 25;
+            const interval = setInterval(() => {
+                const randomUser = participants[Math.floor(Math.random() * participants.length)];
+                display.innerHTML = `<div class="bg-black p-8 rounded-[2.5rem] text-white text-center mb-6 shuffle-name"><p class="text-[9px] font-black uppercase tracking-widest opacity-50 mb-2 italic">MENGUNDI...</p><h2 class="text-3xl font-black italic uppercase text-red-500">${randomUser.name}</h2></div>`;
+                counter++;
+                if (counter >= maxTurns) { clearInterval(interval); finishRaffle(); }
+            }, 120);
+        };
+
+        const finishRaffle = () => {
+            const winner = participants[Math.floor(Math.random() * participants.length)];
+            const display = document.getElementById('winner-display');
+            display.innerHTML = `
+                <div class="bg-black p-8 rounded-[2.5rem] text-white text-center mb-6 relative overflow-hidden animate__animated animate__jackInTheBox">
+                    <div class="absolute inset-0 bg-gradient-to-br from-red-600/20 to-transparent"></div>
+                    <p class="text-[9px] font-black uppercase tracking-widest mb-2 opacity-50 relative z-10 italic">WINNER DETECTED</p>
+                    <h2 class="text-4xl font-black italic uppercase mb-1 relative z-10 text-red-500">${winner.name}</h2>
+                    <p class="text-[10px] opacity-50 mb-6 relative z-10">${winner.contact}</p>
+                    <button onclick="document.getElementById('winner-display').classList.add('hidden')" class="text-[9px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl transition-all relative z-10">TUTUP</button>
+                    <i data-lucide="trophy" class="absolute -right-4 -bottom-4 w-24 h-24 text-white/5 -rotate-12"></i>
+                </div>`;
+            document.getElementById('btn-undi').disabled = false;
+            lucide.createIcons();
+        };
+
+        const updateChatUI = () => {
+            const chatBox = document.getElementById('chat-messages');
+            if (chatBox && currentUser) {
+                const myChats = allChats.filter(c => c.userId === currentUser.uid).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                chatBox.innerHTML = myChats.map(c => `
+                    <div class="flex ${c.senderType === 'admin' ? 'justify-start' : 'justify-end'} animate__animated animate__fadeInUp animate__faster">
+                        <div class="${c.senderType === 'admin' ? 'bg-white border text-slate-800' : 'bg-red-600 text-white'} p-3 rounded-2xl shadow-sm text-xs max-w-[85%]">
+                            <p class="font-medium">${c.text}</p>
+                        </div>
+                    </div>`).join('');
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        };
+
+        window.selectUserChat = (uid) => {
+            activeAdminChatUserId = uid;
+            const participant = participants.find(p => p.uid === uid);
+            const chatObj = allChats.find(c => c.userId === uid);
+            const displayName = participant ? participant.name : (chatObj ? chatObj.senderName : "User Baru");
+            
+            document.getElementById('active-chat-name').innerText = displayName;
+            document.getElementById('chat-status-dot').className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
+            renderAdminChatDetails();
+            renderAdminUserList();
+        };
+
+        window.sendAdminReply = async () => {
+            const input = document.getElementById('admin-chat-input');
+            const text = input.value.trim();
+            if (!text || !activeAdminChatUserId) return;
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'admin_chats'), {
+                userId: activeAdminChatUserId, senderName: 'Admin', senderType: 'admin', text, timestamp: new Date().toISOString()
+            });
+            input.value = '';
+        };
+
+        const renderAdminChatDetails = () => {
+            const container = document.getElementById('admin-chat-messages');
+            if (!activeAdminChatUserId || !container) return;
+            const filtered = allChats.filter(c => c.userId === activeAdminChatUserId).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            container.innerHTML = filtered.map(c => `
+                <div class="flex ${c.senderType === 'admin' ? 'justify-end' : 'justify-start'} animate__animated animate__fadeInUp animate__faster">
+                    <div class="max-w-[85%] ${c.senderType === 'admin' ? 'bg-black text-white' : 'bg-white border'} p-3 rounded-2xl text-xs">
+                        <p>${c.text}</p>
+                    </div>
+                </div>`).join('');
+            container.scrollTop = container.scrollHeight;
+        };
+
+        const renderAdminUserList = () => {
+            const listContainer = document.getElementById('admin-user-list');
+            if(!listContainer) return;
+            const usersMap = {};
+            
+            allChats.forEach(c => {
+                const participant = participants.find(p => p.uid === c.userId);
+                const name = participant ? participant.name : (c.senderType === 'user' ? c.senderName : 'User');
+                
+                if(!usersMap[c.userId]) {
+                    usersMap[c.userId] = { name, last: c.text, time: c.timestamp, uid: c.userId };
+                } else if(new Date(c.timestamp) > new Date(usersMap[c.userId].time)) {
+                    usersMap[c.userId].last = c.text;
+                    usersMap[c.userId].time = c.timestamp;
+                }
+            });
+            
+            const sorted = Object.values(usersMap).sort((a,b) => new Date(b.time) - new Date(a.time));
+            listContainer.innerHTML = sorted.map(u => `
+                <div onclick="selectUserChat('${u.uid}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${activeAdminChatUserId === u.uid ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-transparent hover:bg-slate-100'}">
+                    <p class="text-[10px] font-black uppercase italic truncate">${u.name}</p>
+                    <p class="text-[9px] text-slate-400 truncate">${u.last}</p>
+                </div>`).join('');
+        };
+
+        const updateUI = () => {
+            const countEl = document.getElementById('stat-count');
+            const adminCountEl = document.getElementById('admin-stat-count');
+            if(countEl) countEl.innerText = participants.length;
+            if(adminCountEl) adminCountEl.innerText = participants.length;
+            
+            const badge = document.getElementById('status-badge');
+            const statusText = document.getElementById('status-text');
+            if(badge) {
+                statusText.innerText = settings.isActive ? "EVENT AKTIF" : "EVENT DITUTUP";
+                badge.className = settings.isActive ? "inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 border border-red-100 text-red-600 text-[10px] font-bold tracking-widest uppercase mb-8" : "inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200 text-slate-400 text-[10px] font-bold tracking-widest uppercase mb-8";
+            }
+
+            const waBtnCont = document.getElementById('wa-button-container');
+            if(waBtnCont) {
+                waBtnCont.innerHTML = `
+                    <a href="https://wa.me/${settings.waNumber}" target="_blank" class="flex flex-col items-center justify-center gap-4 w-full h-full">
+                        <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                            <i data-lucide="message-circle" class="text-red-600 w-8 h-8"></i>
+                        </div>
+                        <h5 class="font-black uppercase italic text-sm">Hubungi Kami</h5>
+                    </a>
+                `;
+            }
+
+            const regContainer = document.getElementById('registration-container');
+            const deviceJoined = getJoinStatus();
+
+            if (participants.length === 0 && deviceJoined) clearJoinStatus();
+
+            if (regContainer) {
+                if (!settings.isActive) {
+                    regContainer.innerHTML = `<div class="text-center"><i data-lucide="lock" class="w-16 h-16 text-slate-200 mx-auto mb-4 floating-icon"></i><h3 class="text-xl font-black uppercase italic text-slate-300">Pendaftaran Ditutup</h3></div>`;
+                } else if (getJoinStatus()) {
+                    regContainer.innerHTML = `<div class="text-center animate__animated animate__bounceIn"><div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="check" class="text-green-500 w-10 h-10"></i></div><h2 class="text-2xl font-black italic">TERDAFTAR!</h2><p class="text-[10px] uppercase font-bold text-slate-400 mt-2">Tunggu pengundian admin ya.</p></div>`;
+                } else {
+                    regContainer.innerHTML = `
+                        <form id="giveaway-form" class="space-y-6 animate__animated animate__fadeIn">
+                            <h3 class="text-xl font-black uppercase mb-1 italic">Join Sekarang</h3>
+                            <div class="space-y-4">
+                                <input type="text" id="inp-name" required class="w-full bg-slate-50 rounded-2xl p-4 text-sm font-semibold outline-none border-2 border-transparent focus:border-red-600 transition-all" placeholder="Nama Lengkap">
+                                <input type="text" id="inp-contact" required class="w-full bg-slate-50 rounded-2xl p-4 text-sm font-semibold outline-none border-2 border-transparent focus:border-red-600 transition-all" placeholder="Nomor WA (08...)">
+                            </div>
+                            <button type="submit" class="w-full bg-red-600 text-white font-black py-4 rounded-2xl btn-premium shadow-lg shadow-red-600/20 uppercase italic tracking-widest">Submit Data</button>
+                        </form>`;
+                    document.getElementById('giveaway-form').onsubmit = handleFormSubmit;
+                }
+            }
+
+            const tBody = document.getElementById('table-body');
+            if (tBody) {
+                tBody.innerHTML = participants.map(p => `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 font-bold text-[11px]">${p.name} ${p.isBot ? '<span class="text-[7px] bg-slate-200 px-1 rounded ml-1">SIM</span>' : ''} <br><span class="text-[9px] text-slate-400 font-normal">${p.contact}</span></td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="deleteSingle('${p.id}')" class="text-slate-300 hover:text-red-600 transition-colors"><i data-lucide="trash-2" size="14"></i></button>
+                        </td>
+                    </tr>`).join('');
+            }
+
+            const btnLock = document.getElementById('btn-lock');
+            if (btnLock) { btnLock.innerHTML = settings.isActive ? `STATUS: AKTIF <span class="bg-green-500 w-2 h-2 rounded-full"></span>` : `STATUS: TUTUP <span class="bg-red-500 w-2 h-2 rounded-full"></span>`; }
+            lucide.createIcons();
+        };
+
+        const handleFormSubmit = async (e) => {
+            e.preventDefault();
+            if (getJoinStatus() || !currentUser) return;
+            const name = document.getElementById('inp-name').value;
+            const contact = document.getElementById('inp-contact').value;
+            const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'giveaway_users'), { 
+                name, 
+                contact, 
+                uid: currentUser.uid, 
+                timestamp: new Date().toISOString() 
+            });
+            setJoinStatus(docRef.id);
+            updateUI();
+        };
+
+        init();
+    </script>
+</body>
+</html>
